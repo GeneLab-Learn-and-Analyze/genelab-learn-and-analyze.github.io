@@ -211,7 +211,6 @@ nav.modules button[aria-current="page"] {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 .eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.mod-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; max-width: 70ch; }
 .mod-head h2 { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem); }
 .mod-head p { color: var(--ink-2); }
 
@@ -322,6 +321,40 @@ textarea {
 }
 .tabs button[aria-selected="true"] { color: var(--giemsa); border-bottom-color: var(--giemsa); font-weight: 600; }
 
+/* ---------- selectorul de limbă cu steaguri ---------- */
+.langpick { position: relative; }
+.lp-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.lp-btn {
+  font: inherit; font-size: .84rem; cursor: pointer; display: flex; align-items: center; gap: 7px;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--line-2);
+  border-radius: 8px; padding: 4px 8px;
+}
+.lp-btn:hover { border-color: var(--giemsa); }
+.lp-flag { display: block; line-height: 0; }
+.lp-flag svg { display: block; border-radius: 2px; overflow: hidden; box-shadow: 0 0 0 1px rgba(26,23,39,.14) inset; }
+.lp-code { font-weight: 600; letter-spacing: .04em; }
+.lp-car { color: var(--muted); }
+.lp-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 60; min-width: 158px;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 5px; display: flex; flex-direction: column; gap: 2px;
+}
+.lp-menu button {
+  font: inherit; font-size: .9rem; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 9px;
+  background: none; border: 0; border-radius: 7px; padding: 7px 9px; color: var(--ink-2); width: 100%;
+}
+.lp-menu button:hover { background: var(--surface-2); color: var(--ink); }
+.lp-menu button[aria-selected="true"] { background: var(--giemsa-soft); color: var(--ink); font-weight: 600; }
+.lp-menu var { font-style: normal; }
+
+/* ---------- figurile tridimensionale din capul fiecărui modul ---------- */
+.mod-head { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: center; margin-bottom: 20px; max-width: none; }
+.mod-head .mh-txt { display: flex; flex-direction: column; gap: 6px; max-width: 70ch; min-width: 0; }
+canvas.mod3d { width: 300px; height: 165px; display: block; justify-self: end; }
+@media (max-width: 900px) {
+  .mod-head { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  canvas.mod3d { width: 100%; max-width: 320px; height: 120px; justify-self: start; }
+}
 /* ---------- antetul animat de pe prima pagină ---------- */
 .hero-stage {
   position: relative; overflow: hidden; isolation: isolate;
@@ -362,7 +395,7 @@ button.btn.big { font-size: 1rem; padding: 12px 22px; border-radius: 10px; }
   border: 1px solid color-mix(in oklab, var(--line-2) 55%, transparent);
   border-radius: 13px;
 }
-.hero-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 760px; }
+.hero-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 540px; }
 .hero-cards .hc { padding: 13px 15px; display: flex; align-items: center; gap: 12px; }
 .hero-cards .hc .big-n { font-family: var(--font-m); font-size: 1.7rem; font-weight: 600; color: var(--ink); line-height: 1; flex: none; }
 .hero-cards .hc .lab { font-size: .86rem; color: var(--ink-2); line-height: 1.3; }
@@ -463,13 +496,17 @@ svg .allele { font-family: var(--font-m); font-size: 12px; font-weight: 500; }
       </span>
     </a>
     <nav class="modules" id="nav"></nav>
-    <select id="lang-sel" aria-label="Limba interfeței" style="width:auto; min-width:70px; font-size:.84rem; padding:4px 6px">
-      <option value="en">EN</option>
-      <option value="ro">RO</option>
-      <option value="fr">FR</option>
-      <option value="de">DE</option>
-      <option value="hu">HU</option>
-    </select>
+    <div class="langpick" id="langpick">
+      <button class="lp-btn" id="lp-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Limba interfeței"></button>
+      <div class="lp-menu" id="lp-menu" role="listbox" hidden></div>
+      <select id="lang-sel" aria-hidden="true" tabindex="-1" class="lp-native">
+        <option value="en">EN</option>
+        <option value="ro">RO</option>
+        <option value="fr">FR</option>
+        <option value="de">DE</option>
+        <option value="hu">HU</option>
+      </select>
+    </div>
   </div>
 </header>
 
@@ -502,18 +539,6 @@ svg .allele { font-family: var(--font-m); font-size: 12px; font-weight: 500; }
         <div class="hc glass">
           <div class="ic" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 26 26">
-              <circle cx="13" cy="13" r="10" fill="none" stroke="var(--s1)" stroke-width="1.8"/>
-              <path d="M3 13h20M13 3c3.2 3.4 3.2 16.6 0 20M13 3c-3.2 3.4-3.2 16.6 0 20" fill="none" stroke="var(--s1)" stroke-width="1.4" opacity=".75"/>
-            </svg>
-          </div>
-          <div class="lab">
-            <div class="t">cinci limbi</div>
-            <div>engleză, română, franceză, germană, maghiară</div>
-          </div>
-        </div>
-        <div class="hc glass">
-          <div class="ic" aria-hidden="true">
-            <svg width="24" height="24" viewBox="0 0 26 26">
               <rect x="2.6" y="4.6" width="20.8" height="14.4" rx="2.6" fill="none" stroke="var(--base-g)" stroke-width="1.8"/>
               <path d="M2.6 8.6h20.8M8 22.4h10" stroke="var(--base-g)" stroke-width="1.6"/>
             </svg>
@@ -540,9 +565,12 @@ svg .allele { font-family: var(--font-m); font-size: 12px; font-weight: 500; }
 
 <section id="v-meioza" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 1</p>
     <h2>Meioză și asortare independentă</h2>
     <p>Un cariotip minim — <b>2n = 4</b>: un cromozom metacentric cu doi loci (<span class="mono">A</span> proximal, <span class="mono">B</span> distal) și un cromozom telocentric cu locusul <span class="mono">C</span>. Roz = origine maternă, verde-albastru = origine paternă, așa că recombinarea se vede direct ca o schimbare de culoare pe cromatidă.</p>
+    </div>
+    <canvas class="mod3d" data-s="meioza" aria-hidden="true"></canvas>
   </div>
 
   <div class="split">
@@ -1088,9 +1116,12 @@ MODULES.meioza = function () {
 </script>
 <section id="v-mendel" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 2</p>
     <h2>Încrucișări mendeliene și linkaj</h2>
     <p>Trei drumuri către același tip de răspuns: pătratul Punnett pentru unul sau doi loci, regula produsului când locii sunt mai mulți, și analiza unei încrucișări de test cu trei puncte când genele stau pe același cromozom. Ultimele două file arată ce se întâmplă când raportul mendelian nu mai iese: genele se acoperă una pe alta, o clasă nu ajunge să fie numărată, sau caracterul este dat de mulți loci deodată.</p>
+    </div>
+    <canvas class="mod3d" data-s="mendel" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="md-tabs">
@@ -2519,9 +2550,12 @@ MODULES.mendel = function () {
 </script>
 <section id="v-populatii" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 3</p>
     <h2>Hardy-Weinberg și genetica populațiilor</h2>
     <p>Trei sisteme pe același principiu: două alele fără dominanță, alelele multiple ale grupelor sanguine și un locus X-linkat, unde frecvențele diferă între sexe. Întâi testul de echilibru pe un eșantion, apoi ce se întâmplă când intervin deriva, selecția, mutația și migrația.</p>
+    </div>
+    <canvas class="mod3d" data-s="populatii" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="pp-tabs">
@@ -3286,9 +3320,12 @@ MODULES.populatii = function () {
 </script>
 <section id="v-pcr" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 4</p>
     <h2>PCR: amplificare, detecție și cuantificare</h2>
     <p>De la cele trei temperaturi și primul produs cu capete definite, la citirea fragmentelor pe gel, apoi la cele două metode de cuantificare: PCR-ul în timp real, cu Ct și curbă standard, și PCR-ul digital, care numără molecule una câte una.</p>
+    </div>
+    <canvas class="mod3d" data-s="pcr" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="pc-tabs">
@@ -4331,9 +4368,12 @@ MODULES.pcr = function () {
 
 <section id="v-pedigree" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 5</p>
     <h2>Pedigree și deducerea genotipurilor</h2>
     <p>Completează genotipul fiecărui individ din arbore. Programul nu cere doar răspunsurile ușoare: acolo unde datele nu permit o singură concluzie, răspunsul corect este semnul întrebării — iar o alelă pusă acolo se consideră greșeală. Ultimele două file ies din tiparul mendelian: transmiterea pe linie maternă și cazul în care gena există, dar boala nu apare.</p>
+    </div>
+    <canvas class="mod3d" data-s="pedigree" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="pd-tabs">
@@ -5171,9 +5211,12 @@ MODULES.pedigree = function () {
 
 <section id="v-molecule" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 6</p>
     <h2>De la ADN la proteină</h2>
     <p>O genă scurtă, de la dubla catenă până la peptidă. Apasă pe orice bază a catenei sens ca să o schimbi și vezi imediat ce tip de mutație ai produs — silențioasă, missens, nonsens sau deplasare de cadru.</p>
+    </div>
+    <canvas class="mod3d" data-s="molecule" aria-hidden="true"></canvas>
   </div>
 
   <div class="split">
@@ -5587,9 +5630,12 @@ MODULES.molecule = function () {
 
 <section id="v-restrictie" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 7</p>
     <h2>Hartă de restricție</h2>
     <p>O moleculă de ADN — liniară sau circulară — cu situsuri necunoscute. Din mărimile fragmentelor obținute la digestia cu fiecare enzimă, la digestia dublă și, dacă vrei, la o digestie parțială, reconstruiește unde taie fiecare enzimă.</p>
+    </div>
+    <canvas class="mod3d" data-s="restrictie" aria-hidden="true"></canvas>
   </div>
 
   <div class="split">
@@ -5995,9 +6041,12 @@ MODULES.restrictie = function () {
 
 <section id="v-rudenie" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 8</p>
     <h2>Rudenie și consangvinizare</h2>
     <p>Cât din genom împart două rude? Coeficientul de rudenie se calculează pe căile care trec prin strămoșii comuni, dar este o <em>medie</em>: simularea arată cât de mult variază în realitate, de la o pereche la alta.</p>
+    </div>
+    <canvas class="mod3d" data-s="rudenie" aria-hidden="true"></canvas>
   </div>
 
   <div class="split">
@@ -6448,9 +6497,12 @@ MODULES.rudenie = function () {
 
 <section id="v-genealogii" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 9</p>
     <h2>Genealogii de gene și derivă</h2>
     <p>Modelul Wright-Fisher în forma lui cea mai simplă: fiecare genă dintr-o generație își alege la întâmplare o genă-părinte din generația precedentă. Nu se întâmplă nimic altceva — nici selecție, nici mutație — și totuși liniile dispar una câte una până când toate genele descind dintr-una singură.</p>
+    </div>
+    <canvas class="mod3d" data-s="genealogii" aria-hidden="true"></canvas>
   </div>
 
   <div class="split">
@@ -6713,9 +6765,12 @@ MODULES.genealogii = function () {
 
 <section id="v-sintenie" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 10</p>
     <h2>Sintenie: contextul genomic ca unitate de comparație</h2>
     <p>Două gene din specii diferite nu se compară una cu alta, ci împreună cu vecinii lor. Aici unitatea de căutare nu este secvența, ci familia de gene dată de adnotarea funcțională: dacă aceleași familii apar în aceeași ordine în două genomuri, regiunea este sinteniță. Modulul arată cum se găsește o astfel de regiune, cum arată la microscop un rearanjament și de ce un prag prost ales produce blocuri care nu există.</p>
+    </div>
+    <canvas class="mod3d" data-s="sintenie" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="sn-tabs">
@@ -7438,9 +7493,12 @@ MODULES.sintenie = function () {
 
 <section id="v-cromozomi" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 11</p>
     <h2>Cromozomi: de la cariotip la testele moleculare</h2>
     <p>Aceeași întrebare — câte copii are fetusul din fiecare cromozom — primește răspuns prin patru tehnologii cu rezoluții și limite diferite. Modulul arată ce vede fiecare, ce îi scapă și cum se citește rezultatul brut: planșa metafazică la microscop, electroferograma de la analizorul de fragmente, numărătoarea de fragmente din ADN-ul liber circulant și haplotipul Y folosit pentru linia paternă.</p>
+    </div>
+    <canvas class="mod3d" data-s="cromozomi" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="cz-tabs">
@@ -8469,9 +8527,12 @@ MODULES.cromozomi = function () {
 
 <section id="v-crispr" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 12</p>
     <h2>CRISPR-Cas9: proiectare, tăiere, reparare</h2>
     <p>Cas9 nu caută o genă, ci o secvență de douăzeci de litere lipită de un motiv PAM. Ce se întâmplă după tăiere nu mai decide experimentatorul, ci celula: alege singură calea de reparare, iar de acolo vine și eficiența, și rezultatul nedorit. Modulul parcurge cele trei etape în ordinea în care se întâmplă și arată unde se pierde controlul.</p>
+    </div>
+    <canvas class="mod3d" data-s="crispr" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="cr-tabs">
@@ -9157,9 +9218,12 @@ MODULES.crispr = function () {
 
 <section id="v-ngs" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 13</p>
     <h2>Secvențiere masivă: de la bibliotecă la variantă</h2>
     <p>Un secvențiator nu citește un genom, ci milioane de fragmente scurte, fiecare cu propria probabilitate de eroare. Genomul se reconstituie abia la aliniere, iar o diferență față de secvența de referință devine „variantă” numai după ce trece testul de adâncime, de calitate și de proporție a alelelor. Modulul urmează lanțul în ordinea în care se întâmplă și arată la fiecare pas ce informație se pierde.</p>
+    </div>
+    <canvas class="mod3d" data-s="ngs" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="ng-tabs">
@@ -10343,9 +10407,12 @@ MODULES.ngs = function () {
 
 <section id="v-reglaj" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 14</p>
     <h2>Reglajul expresiei genice: de la operon la cromatină</h2>
     <p>O genă nu este pornită sau oprită prin ea însăși. Starea ei depinde de ce se găsește în mediu, de ce proteine se leagă pe ADN înaintea genei și de cât de strâns este împachetată secvența în cromatină. Modulul urmează aceleași trei niveluri de control, de la bacterie la celula umană, și arată că la niciunul dintre ele secvența de litere nu se schimbă.</p>
+    </div>
+    <canvas class="mod3d" data-s="reglaj" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="rg-tabs">
@@ -11987,9 +12054,12 @@ MODULES.reglaj = function () {
 
 <section id="v-blast" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 15</p>
     <h2>Căutare de similaritate: de la cuvânt la valoarea E</h2>
     <p>O secvență necunoscută nu se identifică prin comparație completă cu tot ce există: ar fi mult prea lent. BLAST caută mai întâi cuvinte scurte identice, extinde aliniamentul numai acolo unde a găsit un astfel de cuvânt, iar la sfârșit întreabă dacă rezultatul ar fi putut apărea și din întâmplare. Modulul arată cele trei etape separat și abia apoi tabelul de rezultate, așa cum îl vezi la NCBI.</p>
+    </div>
+    <canvas class="mod3d" data-s="blast" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="bl-tabs">
@@ -13634,9 +13704,12 @@ MODULES.blast = function () {
 
 <section id="v-date" class="view" hidden>
   <div class="mod-head">
+    <div class="mh-txt">
     <p class="eyebrow">Modul 16</p>
     <h2>Calcule pe datele tale</h2>
     <p>Îți introduci propriile numere — numărători de descendenți, genotipuri, valori Ct, partiții sau distanțe de migrare — și primești calculul complet, cu formulele folosite și o interpretare a rezultatului. Datele pot fi lipite direct din Excel sau încărcate ca fișier CSV ori XLSX; pentru qPCR se poate încărca exportul aparatului, iar pentru electroforeză chiar poza gelului, din care benzile sunt măsurate automat.</p>
+    </div>
+    <canvas class="mod3d" data-s="date" aria-hidden="true"></canvas>
   </div>
 
   <div class="tabs" id="dt-tabs">
@@ -15961,6 +16034,501 @@ window.I18N = window.I18N || {};
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
+})();
+</script>
+
+<script>
+/* ---------- scene tridimensionale, câte una pentru fiecare modul ---------- */
+(function () {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const TAU = Math.PI * 2;
+  let COL = {};
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = (n, f) => (cs.getPropertyValue(n) || "").trim() || f;
+    COL = {
+      mat: g("--mat", "#c4467a"), pat: g("--pat", "#0f7d86"),
+      s1: g("--s1", "#2a78d6"), s2: g("--s2", "#eb6834"), s3: g("--s3", "#1baf7a"),
+      gie: g("--giemsa", "#4b3f8f"), eos: g("--eosin", "#bf3f66"),
+      a: g("--base-a", "#157f55"), t: g("--base-t", "#b63a2d"),
+      gg: g("--base-g", "#a1620b"), c: g("--base-c", "#2a6fc9"),
+      line: g("--line-2", "#c9c2d6"), muted: g("--muted", "#6b6582"),
+      ink: g("--ink", "#1a1727"), ok: g("--ok", "#1a7a4a"), bad: g("--bad", "#b1372f"),
+      warn: g("--warn", "#9a6400"), surf: g("--surface-2", "#efecf3")
+    };
+  }
+  readColors();
+
+  /* ---- mici ajutoare de geometrie ---- */
+  const S = (p, r, c, o) => ({ k: "s", p: p, r: r, c: c, o: o === undefined ? 1 : o });
+  const L = (a, b, w, c, o) => ({ k: "l", a: a, b: b, w: w, c: c, o: o === undefined ? 1 : o });
+  const Q = (pts, c, o) => ({ k: "q", pts: pts, c: c, o: o === undefined ? 1 : o });
+  function tube(out, a, b, n, r, c, o) {
+    for (let i = 0; i <= n; i++) {
+      const u = i / n;
+      out.push(S([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u], r, c, o));
+    }
+  }
+  /* elice dublă de-a lungul axei y, între y0 și y1 */
+  function helix(out, y0, y1, rad, turns, ph, n, c1, c2, rc, rw, o) {
+    for (let i = 0; i <= n; i++) {
+      const u = i / n, y = y0 + (y1 - y0) * u, a = ph + u * turns * TAU;
+      const p1 = [Math.cos(a) * rad, y, Math.sin(a) * rad];
+      const p2 = [-Math.cos(a) * rad, y, -Math.sin(a) * rad];
+      if (rc) out.push(L(p1, p2, rw || 1.2, rc, (o || 1) * 0.5));
+      out.push(S(p1, 0.062, c1, o));
+      out.push(S(p2, 0.062, c2, o));
+    }
+  }
+  function ring(out, cx, cy, cz, rad, n, r, c, ph, o) {
+    for (let i = 0; i < n; i++) {
+      const a = ph + i / n * TAU;
+      out.push(S([cx + Math.cos(a) * rad, cy, cz + Math.sin(a) * rad], r, c, o));
+    }
+  }
+  /* cromozom în formă de X, în planul xy */
+  function chromX(out, cx, cy, cz, h, w, c) {
+    tube(out, [cx - w, cy + h, cz], [cx + w * 0.18, cy, cz], 7, 0.055, c);
+    tube(out, [cx + w, cy + h, cz], [cx - w * 0.18, cy, cz], 7, 0.055, c);
+    tube(out, [cx - w, cy - h, cz], [cx + w * 0.18, cy, cz], 7, 0.055, c);
+    tube(out, [cx + w, cy - h, cz], [cx - w * 0.18, cy, cz], 7, 0.055, c);
+  }
+  /* închide o culoare hex spre întuneric sau lumină, ca să se vadă fețele cutiei */
+  function shade(c, k) {
+    c = String(c).trim();
+    if (c.charAt(0) !== "#") return c;
+    const h = c.length === 4 ? c.slice(1).split("").map(x => x + x).join("") : c.slice(1, 7);
+    const n = parseInt(h, 16);
+    const f = v => Math.max(0, Math.min(255, Math.round(v * k)));
+    return "rgb(" + f((n >> 16) & 255) + "," + f((n >> 8) & 255) + "," + f(n & 255) + ")";
+  }
+  const FACES = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[3,2,6,7],[1,2,6,5],[0,3,7,4]];
+  const FSH = [0.72, 1, 0.66, 1.12, 0.88, 0.8];
+  /* cutie de-a lungul axei x, între x0 și x1 */
+  function bar(out, x0, x1, cy, cz, h, d, c, o) {
+    const v = [[x0,cy-h,cz-d],[x1,cy-h,cz-d],[x1,cy+h,cz-d],[x0,cy+h,cz-d],
+               [x0,cy-h,cz+d],[x1,cy-h,cz+d],[x1,cy+h,cz+d],[x0,cy+h,cz+d]];
+    FACES.forEach((q, i) => out.push(Q(q.map(j => v[j]), shade(c, FSH[i]), o === undefined ? 1 : o)));
+  }
+  function cube(out, cx, cy, cz, s2, c, o) {
+    bar(out, cx - s2 / 2, cx + s2 / 2, cy, cz, s2 / 2, s2 / 2, c, o);
+  }
+  /* cutie cu înălțime proprie, pentru coloane */
+  function col(out, cx, cz, y0, y1, w, c, o) {
+    bar(out, cx - w, cx + w, (y0 + y1) / 2, cz, (y1 - y0) / 2, w, c, o);
+  }
+
+  /* ================= scenele ================= */
+  const SC = {
+    /* meioză: patru cromozomi, doi materni și doi paterni */
+    meioza: t => {
+      const o = [], sp = 0.55 + 0.1 * Math.sin(t * 0.7);
+      chromX(o, -sp, 0.12, -0.3, 0.34, 0.2, COL.mat);
+      chromX(o, -sp * 0.35, -0.1, 0.35, 0.34, 0.2, COL.mat);
+      chromX(o, sp * 0.35, 0.14, -0.35, 0.3, 0.18, COL.pat);
+      chromX(o, sp, -0.12, 0.3, 0.3, 0.18, COL.pat);
+      for (let i = 0; i < 24; i++) {
+        const a = i / 24 * TAU;
+        o.push(S([Math.cos(a) * 1.05, -0.62, Math.sin(a) * 1.05], 0.022, COL.line, 0.5));
+      }
+      return o;
+    },
+    /* Mendel: pătratul Punnett ca patru cuburi */
+    mendel: t => {
+      const o = [], g = 0.42, lift = 0.05 * Math.sin(t * 1.1);
+      const cs = [COL.gie, COL.s1, COL.s1, COL.line];
+      let k = 0;
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++)
+        cube(o, (i - 0.5) * g * 2, (0.5 - j) * g * 2 + (k % 3 === 0 ? lift : -lift), 0, g * 1.35, cs[k++]);
+      return o;
+    },
+    /* populații: nor de indivizi, trei genotipuri */
+    populatii: t => {
+      const o = [];
+      for (let i = 0; i < 74; i++) {
+        const a = i * 2.399, r = 0.95 * Math.sqrt((i + 0.5) / 74);
+        const y = Math.cos(i * 0.7 + t * 0.5) * 0.55;
+        const c = i % 9 === 0 ? COL.eos : (i % 3 === 0 ? COL.s2 : COL.s1);
+        o.push(S([Math.cos(a + t * 0.25) * r, y, Math.sin(a + t * 0.25) * r], 0.052 + (i % 5) * 0.004, c, 0.95));
+      }
+      return o;
+    },
+    /* PCR: elicea se deschide și se închide */
+    pcr: t => {
+      const o = [], op = (Math.sin(t * 0.8) + 1) / 2, sp = op * 0.42;
+      for (let i = 0; i <= 40; i++) {
+        const u = i / 40, y = -0.85 + 1.7 * u, a = u * 2.4 * TAU;
+        const w = Math.max(0, 1 - Math.abs(u - 0.5) * 2) * op;
+        const p1 = [Math.cos(a) * 0.3 - sp * w, y, Math.sin(a) * 0.3];
+        const p2 = [-Math.cos(a) * 0.3 + sp * w, y, -Math.sin(a) * 0.3];
+        if (w < 0.25) o.push(L(p1, p2, 1.2, COL.line, 0.5));
+        o.push(S(p1, 0.06, COL.c));
+        o.push(S(p2, 0.06, COL.gg));
+      }
+      return o;
+    },
+    /* pedigree: trei generații, pătrate și cercuri */
+    pedigree: t => {
+      const o = [], y = [0.62, 0.02, -0.6];
+      const gen = [[[-0.5, 1], [0.5, 0]], [[-0.75, 0], [-0.1, 1], [0.6, 0]], [[-0.45, 1], [0.2, 0], [0.8, 1]]];
+      gen.forEach((row, g) => row.forEach(p => {
+        const z = (p[0]) * 0.3;
+        if (p[1]) cube(o, p[0], y[g], z, 0.17, g === 1 ? COL.gie : COL.s1);
+        else o.push(S([p[0], y[g], z], 0.1, g === 1 ? COL.eos : COL.s1));
+      }));
+      o.push(L([-0.5, y[0], -0.15], [0.5, y[0], 0.15], 2.4, COL.line));
+      o.push(L([0, y[0], 0], [-0.1, y[1], -0.03], 2.4, COL.line));
+      o.push(L([-0.75, y[1], -0.22], [0.6, y[1], 0.18], 2.4, COL.line));
+      o.push(L([-0.08, y[1], 0], [0.2, y[2], 0.06], 2.4, COL.line));
+      return o;
+    },
+    /* ADN → proteină: elicea devine lanț de aminoacizi */
+    molecule: t => {
+      const o = [];
+      for (let i = 0; i <= 26; i++) {
+        const u = i / 26, x = -1 + u * 0.95, a = u * 2.2 * TAU + t;
+        o.push(S([x, Math.cos(a) * 0.26, Math.sin(a) * 0.26], 0.055, COL.c));
+        o.push(S([x, -Math.cos(a) * 0.26, -Math.sin(a) * 0.26], 0.055, COL.gg));
+      }
+      const rib = -0.05 + 0.08 * Math.sin(t * 0.9);
+      o.push(S([rib, 0, 0], 0.2, COL.gie, 0.85));
+      for (let i = 0; i <= 16; i++) {
+        const u = i / 16, x = 0.12 + u * 0.95;
+        o.push(S([x, Math.sin(u * 7 + t) * 0.3, Math.cos(u * 7 + t) * 0.22], 0.072,
+          i % 3 === 0 ? COL.s3 : (i % 3 === 1 ? COL.s2 : COL.muted)));
+      }
+      return o;
+    },
+    /* restricție: ADN tăiat în fragmente */
+    restrictie: t => {
+      const o = [], ph = (t * 0.33) % 3.4, cut = [-0.42, 0.1, 0.56];
+      const segs = [[-0.95, cut[0]], [cut[0], cut[1]], [cut[1], cut[2]], [cut[2], 0.95]];
+      const cols = [COL.c, COL.s3, COL.s2, COL.gie];
+      segs.forEach((sg, i) => {
+        let off = 0;
+        for (let k = 0; k < i; k++) off += (ph > k + 0.5 ? 0.09 : 0);
+        bar(o, sg[0] + off, sg[1] + off, 0, 0, 0.11, 0.11, cols[i], 1);
+      });
+      cut.forEach((cx, k) => { if (ph <= k + 0.5) bar(o, cx - 0.025, cx + 0.025, 0, 0, 0.145, 0.145, COL.eos, 1); });
+      return o;
+    },
+    /* rudenie: segmente comune între rude */
+    rudenie: t => {
+      const o = [];
+      const rows = [
+        { y: 0.58, segs: [[-0.88, -0.2, COL.mat], [-0.2, 0.88, COL.line]] },
+        { y: 0, segs: [[-0.88, 0.25, COL.line], [0.25, 0.88, COL.pat]] },
+        { y: -0.58, segs: [[-0.88, -0.2, COL.mat], [-0.2, 0.25, COL.line], [0.25, 0.88, COL.pat]] }
+      ];
+      rows.forEach(r => r.segs.forEach(sg => bar(o, sg[0], sg[1], r.y, 0, 0.085, 0.085, sg[2], 1)));
+      o.push(L([-1.04, 0.58, 0], [-1.04, -0.58, 0], 2.4, COL.line));
+      o.push(S([-1.04, 0.58, 0], 0.075, COL.s1));
+      o.push(S([-1.04, 0, 0], 0.075, COL.s1));
+      o.push(S([-1.04, -0.58, 0], 0.075, COL.eos, 0.6 + 0.4 * Math.sin(t * 1.3) * 0.5 + 0.2));
+      return o;
+    },
+    /* genealogii: liniile de descendență se contopesc */
+    genealogii: t => {
+      const o = [], n = 8, Y = [-0.75, -0.12, 0.5];
+      const node = (i, lvl) => { const cnt = n >> lvl; return [((i + 0.5) / cnt - 0.5) * 1.85, Y[lvl], Math.sin(i * 1.7 + lvl) * 0.16]; };
+      for (let lvl = 0; lvl < 3; lvl++) {
+        const cnt = n >> lvl;
+        for (let i = 0; i < cnt; i++) {
+          const a = node(i, lvl);
+          if (lvl < 2) o.push(L(a, node(i >> 1, lvl + 1), 2.6, COL.line));
+          o.push(S(a, 0.07, lvl === 2 ? COL.eos : COL.s1));
+        }
+      }
+      const top = [0, Y[2] + 0.38, 0];
+      o.push(L(node(0, 2), top, 2.6, COL.line));
+      o.push(L(node(1, 2), top, 2.6, COL.line));
+      o.push(S(top, 0.105, COL.gie, 0.6 + 0.35 * Math.sin(t * 1.5)));
+      return o;
+    },
+    /* sintenie: blocuri comune între două genomuri, cu o inversie */
+    sintenie: t => {
+      const o = [], cs = [COL.s1, COL.s2, COL.s3, COL.gie, COL.gg];
+      const A = [[-0.85, -0.5], [-0.45, -0.1], [-0.05, 0.3], [0.35, 0.6], [0.65, 0.9]];
+      const B = [[-0.85, -0.5], [-0.45, -0.1], [0.35, 0.6], [-0.05, 0.3], [0.65, 0.9]];
+      bar(o, -0.95, 1, 0.42, 0, 0.07, 0.07, COL.line, 0.95);
+      bar(o, -0.95, 1, -0.42, 0, 0.07, 0.07, COL.line, 0.95);
+      A.forEach((s, i) => {
+        bar(o, s[0], s[1], 0.42, 0, 0.075, 0.075, cs[i], 1);
+        const b = B[i];
+        bar(o, b[0], b[1], -0.42, 0, 0.075, 0.075, cs[i], 1);
+        const m1 = (s[0] + s[1]) / 2, m2 = (b[0] + b[1]) / 2;
+        for (let k = 0; k <= 9; k++) {
+          const u = k / 9;
+          o.push(S([m1 + (m2 - m1) * u, 0.34 - 0.68 * u, Math.sin(u * Math.PI) * 0.16], 0.03, cs[i], 0.6));
+        }
+      });
+      return o;
+    },
+    /* cromozomi: un cromozom metafazic cu benzi */
+    cromozomi: t => {
+      const o = [], bands = [0.9, 0.2, 0.75, 0.1, 0.55, 0.3, 0.85];
+      [-0.17, 0.17].forEach(dx => {
+        for (let i = 0; i <= 30; i++) {
+          const u = i / 30, y = 0.85 - 1.7 * u;
+          const pinch = Math.abs(y - 0.12) < 0.07 ? 0.55 : 1;
+          const b = bands[Math.min(bands.length - 1, Math.floor(u * bands.length))];
+          const sh = b > 0.6 ? COL.gie : COL.line;
+          o.push(S([dx * pinch, y, 0], 0.1 * pinch, sh, 0.5 + b * 0.5));
+        }
+      });
+      tube(o, [-0.17, 0.12, 0], [0.17, 0.12, 0], 6, 0.03, COL.eos);
+      return o;
+    },
+    /* CRISPR: Cas9 cu ghidul, pe ADN */
+    crispr: t => {
+      const o = [], app = (Math.sin(t * 0.7) + 1) / 2;
+      for (let i = 0; i <= 46; i++) {
+        const u = i / 46, x = -1 + 2 * u, a = u * 3 * TAU;
+        const cut = app > 0.75 && Math.abs(x - 0.05) < 0.05 ? 0.12 : 0;
+        o.push(S([x + (x > 0.05 ? cut : -cut), Math.cos(a) * 0.2, Math.sin(a) * 0.2], 0.05,
+          Math.abs(x - 0.25) < 0.14 ? COL.s2 : COL.c, 1));
+        o.push(S([x + (x > 0.05 ? cut : -cut), -Math.cos(a) * 0.2, -Math.sin(a) * 0.2], 0.05, COL.gg, 1));
+      }
+      const by = 0.78 - app * 0.42;
+      o.push(S([0.05, by, 0], 0.3, COL.gie, 0.9));
+      for (let i = 0; i <= 12; i++) {
+        const u = i / 12;
+        o.push(S([0.05 + (u - 0.5) * 0.5, by - 0.2 - u * 0.1, 0.1], 0.038, COL.s3, 0.95));
+      }
+      return o;
+    },
+    /* NGS: celulă de flux cu clustere care se aprind */
+    ngs: t => {
+      const o = [], cs = [COL.a, COL.c, COL.gg, COL.t];
+      for (let i = 0; i < 9; i++) for (let j = 0; j < 7; j++) {
+        const x = (i / 8 - 0.5) * 1.8, z = (j / 6 - 0.5) * 1.3;
+        const k = (i * 3 + j * 5 + Math.floor(t * 1.2)) % 4;
+        const lit = (Math.sin(t * 1.6 + i + j) + 1) / 2;
+        o.push(S([x, -0.42 + lit * 0.05, z], 0.055 + lit * 0.02, cs[k], 0.45 + lit * 0.55));
+      }
+      for (let r = 0; r < 4; r++) {
+        const y = 0.12 + r * 0.17, off = ((t * 0.25 + r * 0.3) % 1.6) - 0.8;
+        bar(o, off, off + 0.55 - r * 0.06, y, 0, 0.05, 0.05, r % 2 ? COL.s1 : COL.s3, 0.95);
+      }
+      return o;
+    },
+    /* reglaj: represorul se așază pe operator */
+    reglaj: t => {
+      const o = [], on = (Math.sin(t * 0.6) + 1) / 2;
+      bar(o, -0.95, 1, -0.1, 0, 0.08, 0.08, COL.line, 0.95);
+      bar(o, -0.8, -0.5, -0.1, 0, 0.085, 0.085, COL.s3, 1);
+      bar(o, -0.45, -0.2, -0.1, 0, 0.085, 0.085, COL.eos, 1);
+      [[-0.12, 0.2], [0.26, 0.58], [0.64, 0.96]].forEach((g, i) =>
+        bar(o, g[0], g[1], -0.1, 0, 0.085, 0.085, [COL.s1, COL.gie, COL.s2][i], 1));
+      const ry = 0.62 - (1 - on) * 0.62;
+      o.push(S([-0.32, ry, 0], 0.22, COL.gie, 0.92));
+      o.push(S([-0.32, ry + 0.17, 0.04], 0.13, COL.gie, 0.8));
+      if (on < 0.4) {
+        for (let i = 0; i <= 14; i++) {
+          const u = i / 14;
+          o.push(S([-0.12 + u * 1.1, 0.26 + Math.sin(u * 6 + t * 3) * 0.08, 0.14], 0.035, COL.s2, 0.9));
+        }
+      }
+      return o;
+    },
+    /* BLAST: sămânța se extinde pe diagonală */
+    blast: t => {
+      const o = [], ext = Math.min(1, ((t * 0.38) % 2.8) / 1.5);
+      bar(o, -0.95, 1, 0.44, 0, 0.075, 0.075, COL.line, 1);
+      bar(o, -0.95, 1, -0.44, 0, 0.075, 0.075, COL.line, 1);
+      const sd = -0.05, w = 0.09 + ext * 0.6;
+      bar(o, sd - w, sd + w, 0.44, 0, 0.08, 0.08, COL.s1, 1);
+      bar(o, sd - w + 0.14, sd + w + 0.14, -0.44, 0, 0.08, 0.08, COL.s1, 1);
+      bar(o, sd - 0.09, sd + 0.09, 0.44, 0, 0.088, 0.088, COL.eos, 1);
+      bar(o, sd + 0.05, sd + 0.23, -0.44, 0, 0.088, 0.088, COL.eos, 1);
+      for (let i = 0; i <= 8; i++) { const u = i / 8;
+        o.push(S([sd + 0.14 * u, 0.34 - 0.68 * u, 0.13], 0.028, COL.s3, 0.75)); }
+      return o;
+    },
+    /* datele mele: coloane care cresc */
+    date: t => {
+      const o = [], h = [0.5, 0.85, 0.35, 0.68, 0.45];
+      h.forEach((v, i) => {
+        const x = (i - 2) * 0.38;
+        const hh = v * (0.55 + 0.45 * ((Math.sin(t * 0.9 + i * 0.7) + 1) / 2));
+        col(o, x, 0, -0.72, -0.72 + hh * 1.5, 0.13, [COL.s1, COL.gie, COL.s3, COL.s2, COL.eos][i], 1);
+      });
+      bar(o, -1, 1, -0.78, 0, 0.014, 0.3, COL.line, 0.85);
+      return o;
+    }
+  };
+
+  /* scenele construite din bare rămân citibile numai dacă nu ajung văzute din capăt:
+     ele se leagănă într-un unghi mic, restul se rotesc complet */
+  const OSC = { pedigree: 1, restrictie: 1, rudenie: 1, genealogii: 1, sintenie: 1,
+    ngs: 1, reglaj: 1, blast: 1, date: 1 };
+
+  /* ================= motorul ================= */
+  function mkScene(cv, name) {
+    const ctx = cv.getContext && cv.getContext("2d");
+    if (!ctx) return null;
+    let W = 0, H = 0, dpr = 1;
+    function size() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = cv.clientWidth; H = cv.clientHeight;
+      if (!W || !H) return false;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return true;
+    }
+    function render(t) {
+      if (!W || !H) { if (!size()) return; }
+      const build = SC[name];
+      if (!build) return;
+      const list = build(t);
+      const ang = OSC[name] ? Math.sin(t * 0.26) * 0.6 : t * 0.22;
+      const tx = 0.3;
+      const ca = Math.cos(ang), sa = Math.sin(ang), cx2 = Math.cos(tx), sx2 = Math.sin(tx);
+      const zoom = Math.min(W, H) * 0.46, F = 3.4;
+      function pr(p) {
+        const x = p[0] * ca + p[2] * sa, zz = -p[0] * sa + p[2] * ca;
+        const y2 = p[1] * cx2 - zz * sx2, z2 = p[1] * sx2 + zz * cx2;
+        const s = F / (F + z2);
+        return { x: W / 2 + x * s * zoom, y: H / 2 - y2 * s * zoom, s: s, z: z2 };
+      }
+      const draw = [];
+      for (const it of list) {
+        if (it.k === "s") { const q = pr(it.p); draw.push({ z: q.z, it: it, q: q }); }
+        else if (it.k === "l") { const a = pr(it.a), b = pr(it.b); draw.push({ z: (a.z + b.z) / 2, it: it, a: a, b: b }); }
+        else { const ps = it.pts.map(pr); draw.push({ z: ps.reduce((s2, p) => s2 + p.z, 0) / ps.length, it: it, ps: ps }); }
+      }
+      draw.sort((p, q) => q.z - p.z);
+      ctx.clearRect(0, 0, W, H);
+      for (const d of draw) {
+        const it = d.it;
+        const fade = Math.max(0.25, Math.min(1, 1.25 - d.z * 0.45));
+        ctx.globalAlpha = it.o * fade;
+        if (it.k === "s") {
+          const r = Math.max(0.6, it.r * d.q.s * zoom);
+          const g = ctx.createRadialGradient(d.q.x - r * 0.35, d.q.y - r * 0.4, r * 0.1, d.q.x, d.q.y, r);
+          g.addColorStop(0, "rgba(255,255,255,.7)");
+          g.addColorStop(0.5, it.c); g.addColorStop(1, it.c);
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(d.q.x, d.q.y, r, 0, TAU); ctx.fill();
+        } else if (it.k === "l") {
+          ctx.strokeStyle = it.c; ctx.lineWidth = Math.max(0.7, it.w * d.a.s);
+          ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(d.a.x, d.a.y); ctx.lineTo(d.b.x, d.b.y); ctx.stroke();
+        } else {
+          ctx.fillStyle = it.c;
+          ctx.beginPath(); ctx.moveTo(d.ps[0].x, d.ps[0].y);
+          for (let i = 1; i < d.ps.length; i++) ctx.lineTo(d.ps[i].x, d.ps[i].y);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    size();
+    if (window.ResizeObserver) new ResizeObserver(() => { if (size()) render(lastT); }).observe(cv);
+    return { render: render, size: size };
+  }
+
+  const scenes = {};
+  let lastT = 0, raf = 0, active = null, t0 = 0;
+
+  function pick() {
+    const view = document.querySelector("section.view:not([hidden])");
+    if (!view) return null;
+    const cv = view.querySelector("canvas.mod3d");
+    if (!cv) return null;
+    const name = cv.dataset.s;
+    if (!scenes[name]) scenes[name] = mkScene(cv, name);
+    return scenes[name];
+  }
+  function frame(ms) {
+    raf = 0;
+    if (!t0) t0 = ms;
+    lastT = (ms - t0) / 1000;
+    if (active) active.render(lastT);
+    if (!document.hidden && !reduce) raf = requestAnimationFrame(frame);
+  }
+  function refresh() {
+    active = pick();
+    if (!active) return;
+    active.size();
+    if (reduce || document.hidden) { active.render(lastT || 1.2); return; }
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  window.addEventListener("hashchange", () => setTimeout(refresh, 40));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+    else refresh();
+  });
+  if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const h = () => { readColors(); if (active) active.render(lastT); };
+    if (mq.addEventListener) mq.addEventListener("change", h); else mq.addListener(h);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(refresh, 80));
+  else setTimeout(refresh, 80);
+})();
+</script>
+
+<script>
+/* ---------- selectorul de limbă cu steaguri ---------- */
+(function () {
+  const FLAGS = {
+    en: '<svg viewBox="0 0 24 16" width="22" height="15" aria-hidden="true"><rect width="24" height="16" fill="#012169"/><path d="M0 0l24 16M24 0L0 16" stroke="#fff" stroke-width="3.4"/><path d="M0 0l24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.6"/><path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.4"/><path d="M12 0v16M0 8h24" stroke="#C8102E" stroke-width="3.2"/></svg>',
+    ro: '<svg viewBox="0 0 24 16" width="22" height="15" aria-hidden="true"><rect width="8" height="16" fill="#002B7F"/><rect x="8" width="8" height="16" fill="#FCD116"/><rect x="16" width="8" height="16" fill="#CE1126"/></svg>',
+    fr: '<svg viewBox="0 0 24 16" width="22" height="15" aria-hidden="true"><rect width="8" height="16" fill="#002395"/><rect x="8" width="8" height="16" fill="#F5F5F5"/><rect x="16" width="8" height="16" fill="#ED2939"/></svg>',
+    de: '<svg viewBox="0 0 24 16" width="22" height="15" aria-hidden="true"><rect width="24" height="5.34" fill="#141414"/><rect y="5.34" width="24" height="5.33" fill="#DD0000"/><rect y="10.67" width="24" height="5.33" fill="#FFCE00"/></svg>',
+    hu: '<svg viewBox="0 0 24 16" width="22" height="15" aria-hidden="true"><rect width="24" height="5.34" fill="#CD2A3E"/><rect y="5.34" width="24" height="5.33" fill="#F5F5F5"/><rect y="10.67" width="24" height="5.33" fill="#436F4D"/></svg>'
+  };
+  const NAMES = { en: "English", ro: "Română", fr: "Français", de: "Deutsch", hu: "Magyar" };
+  const ORDER = ["en", "ro", "fr", "de", "hu"];
+
+  function init() {
+    const sel = document.getElementById("lang-sel");
+    const btn = document.getElementById("lp-btn");
+    const menu = document.getElementById("lp-menu");
+    if (!sel || !btn || !menu) return;
+
+    function paint() {
+      const l = sel.value || "en";
+      btn.innerHTML = '<span class="lp-flag">' + (FLAGS[l] || "") + "</span>" +
+        '<span class="lp-code">' + l.toUpperCase() + "</span>" +
+        '<svg class="lp-car" width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">' +
+        '<path d="M1.4 3.4L5 7l3.6-3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+      menu.querySelectorAll("button").forEach(b =>
+        b.setAttribute("aria-selected", String(b.dataset.l === l)));
+    }
+    ORDER.forEach(l => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.role = "option";
+      b.dataset.l = l;
+      b.innerHTML = '<span class="lp-flag">' + FLAGS[l] + "</span><var>" + NAMES[l] + "</var>";
+      b.addEventListener("click", () => {
+        sel.value = l;
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+        close();
+        paint();
+      });
+      menu.appendChild(b);
+    });
+    function open() {
+      menu.hidden = false;
+      /* dacă butonul e lipit de marginea din stânga, meniul se aliniază la stânga */
+      const r = btn.getBoundingClientRect();
+      const toLeft = r.left < 190;
+      menu.style.left = toLeft ? "0" : "auto";
+      menu.style.right = toLeft ? "auto" : "0";
+      btn.setAttribute("aria-expanded", "true");
+    }
+    function close() { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+    btn.addEventListener("click", e => { e.stopPropagation(); menu.hidden ? open() : close(); });
+    document.addEventListener("click", e => { if (!e.target.closest || !e.target.closest("#langpick")) close(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+    sel.addEventListener("change", paint);
+    paint();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();
 </script>
 
