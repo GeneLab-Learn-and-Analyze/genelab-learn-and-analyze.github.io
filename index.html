@@ -9097,7 +9097,7 @@ MODULES.ngs = function () {
       ["Pe catena directă", st.alt ? st.altF + " din " + st.alt : "—"],
       ["Genotip chemat", st.best.lab],
       ["Calitate (QUAL)", st.qual],
-      ["Șansa să fie doar eroare", expoV(st.pErr)],
+      ["Șansa să fie doar eroare", expo(st.pErr)],
       ["Filtru", pass ? "trecut" : st.filters.length + (st.filters.length === 1 ? " motiv de respingere" : " motive de respingere")]
     ]);
     const vcf = $("ng-v-vcf"); clear(vcf);
@@ -11172,6 +11172,20 @@ window.I18N = window.I18N || {};
       return (d && d[x] !== undefined) ? d[x] : x;
     });
   }
+  /* în engleză separatorul zecimal este punctul; valorile numerice care nu trec prin
+     dicționar (citirile din casete, celulele de tabel) păstrau virgula românească.
+     Conversia ocolește etichetele HTML și conținutul marcat <var>, unde virgula
+     poate fi un separator real (de exemplu câmpul AD dintr-o linie VCF). */
+  /* nodurile fără litere se vizitează numai în engleză, unde virgula zecimală
+     trebuie înlocuită cu punct; în rest nu ar avea ce căuta în dicționar */
+  function TRANSLATABLE(t) {
+    return /[A-Za-zĂÂÎȘȚăâîșț]/.test(t) || /\d[.,]\d/.test(t);
+  }
+  function enDecimals(s) {
+    return String(s).split(/(<var>[\s\S]*?<\/var>|<[^>]+>)/).map(function (part, i) {
+      return (i % 2) ? part : part.replace(/(\d),(\d)/g, "$1.$2");
+    }).join("");
+  }
   function lookup(src) {
     var p = tpl(norm(src));
     var d = window.I18N[LANG];
@@ -11218,6 +11232,7 @@ window.I18N = window.I18N || {};
       }
     }
     var out = (LANG === "ro") ? src : (lookup(src) || src);
+    if (LANG === "en") out = enDecimals(out);
     map[kind] = { src: src, out: out };
     recs.set(el, map);
     if (cur !== out) set(el, kind, out);
@@ -11233,13 +11248,13 @@ window.I18N = window.I18N || {};
     }
     if (node.namespaceURI === "http://www.w3.org/2000/svg") {
       if ((tag === "text" || tag === "tspan") && node.children.length === 0) {
-        if (/[A-Za-zĂÂÎȘȚăâîșț]/.test(node.textContent)) cb(node, "svg");
+        if (TRANSLATABLE(node.textContent)) cb(node, "svg");
         return;
       }
       for (var k = 0; k < node.children.length; k++) walk(node.children[k], cb);
       return;
     }
-    if ((node.children.length === 0 || allInline(node)) && /[A-Za-zĂÂÎȘȚăâîșț]/.test(node.textContent)) {
+    if ((node.children.length === 0 || allInline(node)) && TRANSLATABLE(node.textContent)) {
       cb(node, "html");
       return;
     }
