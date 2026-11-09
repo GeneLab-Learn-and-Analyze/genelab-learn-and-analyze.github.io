@@ -321,6 +321,39 @@ textarea {
 }
 .tabs button[aria-selected="true"] { color: var(--giemsa); border-bottom-color: var(--giemsa); font-weight: 600; }
 
+/* ---------- lista de module, strânsă pe ecran îngust ---------- */
+.nav-toggle { display: none; }
+@media (max-width: 900px) {
+  .top-in { flex-wrap: nowrap; gap: 9px; }
+  .brand { min-width: 0; flex: 0 1 auto; }
+  .brand span { min-width: 0; overflow: hidden; }
+  .brand span span { display: none; }
+  .brand b { font-size: .98rem; white-space: nowrap; }
+  .nav-toggle {
+    display: flex; align-items: center; gap: 8px; margin-left: auto;
+    font: inherit; font-size: .88rem; cursor: pointer; min-width: 0; flex: 0 1 auto;
+    background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 10px;
+  }
+  .nav-toggle svg { flex: none; color: var(--giemsa); }
+  .nav-toggle b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-toggle[aria-expanded="true"] { border-color: var(--giemsa); background: var(--giemsa-soft); }
+  nav.modules {
+    position: absolute; left: 0; right: 0; top: 100%; margin: 0; z-index: 40;
+    display: none; flex-direction: column; gap: 2px; flex-wrap: nowrap;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow); padding: 8px;
+    max-height: min(70vh, 520px); overflow-y: auto;
+  }
+  nav.modules.open { display: flex; }
+  #langpick { flex: none; }
+  nav.modules button { text-align: left; border-radius: 8px; padding: 8px 12px; font-size: .94rem; }
+}
+@media (max-width: 560px) {
+  /* pe telefon rămâne doar sigla; numele modulului e mai util decât numele site-ului */
+  .brand b { display: none; }
+  .nav-toggle { max-width: none; }
+}
 /* ---------- selectorul de limbă cu steaguri ---------- */
 .langpick { position: relative; }
 .lp-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
@@ -497,6 +530,12 @@ svg .allele { font-family: var(--font-m); font-size: 12px; font-weight: 500; }
         <span>simulări interactive</span>
       </span>
     </a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">
+      <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">
+        <path d="M1 1.6h14M1 6h14M1 10.4h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      <b class="nt-lab"></b>
+    </button>
     <nav class="modules" id="nav"></nav>
     <div class="langpick" id="langpick">
       <button class="lp-btn" id="lp-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Limba interfeței"></button>
@@ -16533,6 +16572,41 @@ window.I18N = window.I18N || {};
     document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
     sel.addEventListener("change", paint);
     paint();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+
+<script>
+/* ---------- pe ecran îngust, lista de module se strânge într-un singur buton ---------- */
+(function () {
+  function init() {
+    const nav = document.getElementById("nav");
+    const tog = document.getElementById("nav-toggle");
+    if (!nav || !tog) return;
+    const lbl = tog.querySelector(".nt-lab");
+
+    function label() {
+      const cur = nav.querySelector('button[aria-current="page"]');
+      if (lbl) lbl.textContent = cur ? cur.textContent : "";
+    }
+    function open() { nav.classList.add("open"); tog.setAttribute("aria-expanded", "true"); }
+    function close() { nav.classList.remove("open"); tog.setAttribute("aria-expanded", "false"); }
+
+    tog.addEventListener("click", e => {
+      e.stopPropagation();
+      nav.classList.contains("open") ? close() : open();
+    });
+    nav.addEventListener("click", e => { if (e.target.closest("button")) close(); });
+    document.addEventListener("click", e => {
+      if (!e.target.closest || (!e.target.closest("#nav") && !e.target.closest("#nav-toggle"))) close();
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+    window.addEventListener("hashchange", () => { close(); setTimeout(label, 30); });
+    /* numele modulului curent se schimbă și la comutarea limbii */
+    new MutationObserver(label).observe(nav, { subtree: true, characterData: true, childList: true, attributes: true, attributeFilter: ["aria-current"] });
+    label();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
